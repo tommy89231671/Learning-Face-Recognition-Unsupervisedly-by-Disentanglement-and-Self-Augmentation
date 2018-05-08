@@ -49,15 +49,16 @@ class Trainer:
     self.epoch=epoch
   
   def train(self):
-    x_real = torch.FloatTensor(self.batch_size, 1, self.img_size, self.img_size).cuda()
-    label = torch.FloatTensor(self.batch_size,1).cuda()
-    #dis_c = torch.FloatTensor(self.batch_size, dis_c_size).cuda()
-    c = torch.FloatTensor(self.batch_size, self.c_size).cuda()
-    z = torch.FloatTensor(self.batch_size, self.z_size).cuda()
+    """initial some variable"""
+    x_real = torch.FloatTensor(self.batch_size, 1, self.img_size, self.img_size).cuda()#For input image
+    label = torch.FloatTensor(self.batch_size,1).cuda()#For doing loss
+    
+    c = torch.FloatTensor(self.batch_size, self.c_size).cuda()#For distenglement c 
+    z = torch.FloatTensor(self.batch_size, self.z_size).cuda()#For distenglement z
 
     x_real = Variable(x_real)
     label = Variable(label)
-    #dis_c = Variable(dis_c)
+    
     c = Variable(c)
     z = Variable(z)
 
@@ -66,18 +67,18 @@ class Trainer:
     criterionMSE = nn.MSELoss().cuda()
     #criterionReconstuct = F.binary_cross_entropy().cuda()
     
-
-    optimD = optim.Adam([{'params':self.DQ.parameters()}, {'params':self.D.parameters()}], lr=0.0002, betas=(0.5, 0.99))
-    optimQ = optim.Adam([{'params':self.DQ.parameters()}, {'params':self.Q.parameters()}], lr=0.0002, betas=(0.5, 0.99))
-    optimG = optim.Adam([{'params':self.G.parameters()}, {'params':self.Q.parameters()}], lr=0.001, betas=(0.5, 0.99))
-    optimVAE =optim.Adam([{'params':self.Encoder.parameters()}, {'params':self.G.parameters()}], lr=0.0002, betas=(0.5, 0.99))
-    optimEncoder = optim.Adam([{'params':self.Encoder.parameters()}], lr=0.0002, betas=(0.5, 0.99))
+    """optimeize part"""
+    optimD = optim.Adam([{'params':self.DQ.parameters()}, {'params':self.D.parameters()}], lr=0.0002, betas=(0.5, 0.99))#optimize DQ and D
+    optimQ = optim.Adam([{'params':self.DQ.parameters()}, {'params':self.Q.parameters()}], lr=0.0002, betas=(0.5, 0.99))#optimize DQ and Q
+    optimG = optim.Adam([{'params':self.G.parameters()}, {'params':self.Q.parameters()}], lr=0.001, betas=(0.5, 0.99))#optimize G adn Q
+    optimVAE =optim.Adam([{'params':self.Encoder.parameters()}, {'params':self.G.parameters()}], lr=0.0002, betas=(0.5, 0.99))#optimize Encoder and G 
+    optimEncoder = optim.Adam([{'params':self.Encoder.parameters()}], lr=0.0002, betas=(0.5, 0.99))#optimize Encoder
 
     for epoch in range(self.epoch):
         
         for num_iters, batch_data in enumerate(self.dataloader, 0):
           
-            """Discriminator's real part"""
+            """Determine Real_loss"""
             optimD.zero_grad()
             
             x, _ = batch_data
@@ -99,15 +100,12 @@ class Trainer:
             label.data.fill_(1.0)
             loss_real = self.RF_loss_weight*criterionBCE(x_real_result, label)
             loss_real.backward()
-          
+            """Determine Fake_loss"""
             """Encoder part"""
             c_en,z_en=self.Encoder(x_real)
             c_mean,c_logvar=torch.chunk(c_en,2,dim=1)
             z_mean,z_logvar=torch.chunk(z_en,2,dim=1)
             
-            
-            
-            """"Discriminator's fake part"""
             c_distribution =torch.distributions.Normal(c_mean, torch.exp(c_logvar))
             z_distribution= torch.distributions.Normal(z_mean, torch.exp(z_logvar))
             c=c_distribution.sample()
@@ -129,10 +127,10 @@ class Trainer:
             loss_fake = self.RF_loss_weight*criterionBCE(x_fake_result, label)
             loss_fake.backward()
             
-            
+            '''optimize by R+F_loss'''
             optimD.step()
             
-            """Find generator_loss"""
+            """Find generator_loss,c_loss and backward to optimize G Q DQ """
             optimG.zero_grad()
             optimQ.zero_grad()
             dq = self.DQ(x_fake)
@@ -145,7 +143,7 @@ class Trainer:
             
             q= self.Q(dq)
             
-            """Find C_losss and combine Closs and generator_loss"""
+            
             C_loss = self.c_loss_weight*criterionMSE(q,c)
             
             G_loss = generator_loss + C_loss
@@ -159,6 +157,7 @@ class Trainer:
             
             
             #vae_reconstruct_loss = F.binary_cross_entropy(x_fake,x_real, size_average=False).cuda()
+            """Determine KL and Reconstruction_loss and backward"""
             optimVAE.zero_grad()
             optimEncoder.zero_grad()
             z_kl_divergence = torch.sum(0.5 * (z_mean**2 + torch.exp(z_logvar) - 2*z_logvar -1))
@@ -189,7 +188,7 @@ class Trainer:
         f.close()
         
         
-        
+        """Generate Fake image at the end of one epoch"""
         c_en,z_en=self.Encoder(x_real)
         c_mean,c_logvar=torch.chunk(c_en,2,dim=1)
         z_mean,z_logvar=torch.chunk(z_en,2,dim=1)
@@ -209,7 +208,7 @@ class Trainer:
         f1name='./result_'+self.version+'/'+str(epoch)+'_'+self.version+'.png'
           
         save_image(x_save.data,f1name, nrow=20)
-
+    """save model"""    
     gpath='./model/Generator_'+self.version+'.pkl'
     dpath='./model/Discriminator_'+self.version+'.pkl'
     qpath='./model/Q_'+self.version+'.pkl'
