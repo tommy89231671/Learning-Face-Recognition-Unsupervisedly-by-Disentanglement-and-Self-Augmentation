@@ -149,7 +149,7 @@ class Trainer:
             C_loss = self.c_loss_weight*criterionMSE(q,c)
             
             G_loss = generator_loss + C_loss
-            G_loss.backward()
+            G_loss.backward(retain_graph=True)
             optimQ.step()
             optimG.step()
             
@@ -161,15 +161,23 @@ class Trainer:
             #vae_reconstruct_loss = F.binary_cross_entropy(x_fake,x_real, size_average=False).cuda()
             optimVAE.zero_grad()
             optimEncoder.zero_grad()
-            z_kl_divergence = torch.sum(0.5 * (z_mean**2 + torch.exp(z_logvar) - 2*z_logvar -1))
-            c_kl_divergence = torch.sum(0.5 * (c_mean**2 + torch.exp(c_logvar) - 2*c_logvar -1))
+            z_kl_divergence = torch.sum(0.5 * (z_mean**2 + torch.exp(z_logvar) - z_logvar -1))
+            c_kl_divergence = torch.sum(0.5 * (c_mean**2 + torch.exp(c_logvar) - c_logvar -1))
             KL=z_kl_divergence+c_kl_divergence
-            KL.backward(retain_graph=True)
+            KL.backward()
             optimEncoder.step()
             #print((x_fake.view(x_fake.size(0),-1),x_real.view(x_real.size(0),-1)))
             
             #input('en')
             vae_reconstruct_loss = criterionMSE(x_fake.view(x_fake.size(0),-1),x_real.view(x_real.size(0),-1))
+            
+            #print(vae_reconstruct_loss)
+            vae_reconstruct_loss.backward()
+            #vae_loss=vae_reconstruct_loss+KL
+            #vae_loss.backward()
+            
+            
+            #
             optimVAE.step()
             #c_kl_divergence,z_kl_divergence=KL_divergence(c_distribution,z_distribution,self.batch_size,self.c_size,self.z_size)
             
