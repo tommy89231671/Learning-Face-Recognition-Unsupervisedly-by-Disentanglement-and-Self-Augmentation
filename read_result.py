@@ -65,11 +65,11 @@ def read_result(version,epoch):
     plt6.set_title('kl_loss')
     plt6.plot(range(epoch),kl_result)
     plt.savefig('./result_'+version+'/LOSS.png')
-    plt.show()
+    #plt.show()
     
     
     plt.title('Real+fake vs reconstruction')
     plt.plot(range(epoch),Dloss)
     plt.plot(range(epoch),G_result)
     plt.savefig('./result_'+version+'/Real+fake vs reconstruction.png')
-    plt.show()
+    #plt.show()

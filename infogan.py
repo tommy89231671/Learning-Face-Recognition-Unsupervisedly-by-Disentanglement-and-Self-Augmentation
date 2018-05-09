@@ -13,7 +13,8 @@ class Generator(nn.Module):
     
     def __init__(self,c_z_dim):
         super(Generator, self).__init__()
-        self.c_z_dim=c_z_dim     
+        self.c_z_dim=c_z_dim
+        #self.conv1=nn.ConvTranspose2d(c_z_dim,1024,4,1,0,bias=False),        
         self.main = nn.Sequential( 
             nn.ConvTranspose2d(self.c_z_dim,1024,4,1,0,bias=False),
             nn.BatchNorm2d(1024),
@@ -34,10 +35,12 @@ class Generator(nn.Module):
             nn.ConvTranspose2d(128,3,4,2,1,bias=False),
             
             nn.Tanh(),
-            nn.Sigmoid()
+            
         )
     def forward(self,x):
         output = self.main(x)
+        #output=self.conv1(x)
+        #print(output)
         return output
 
 class D_Q_commonlayer(nn.Module):
@@ -86,9 +89,9 @@ class Q(nn.Module):
     self.conv = nn.Conv2d(1024, 128, 1, bias=False)
     self.bn = nn.BatchNorm2d(128)
     self.lReLU = nn.LeakyReLU(0.1, inplace=True)
-   
+    #self.conv_disc = nn.Conv2d(128,5,4)
     self.conv_out = nn.Conv2d(128, self.c_size, 4)
-    
+    #self.conv_var = nn.Conv2d(128, 2, 4)
 
   def forward(self, x):
     y = self.conv(x)

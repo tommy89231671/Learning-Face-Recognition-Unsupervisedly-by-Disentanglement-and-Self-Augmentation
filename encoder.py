@@ -14,6 +14,8 @@ class Encoder(nn.Module):
         ndf=128
         latent_variable_c=c_size
         latent_variable_z=z_size
+        #nc->ndf->2ndf->4ndf->8ndf->ndf*8*4*4->latent_variable_size
+        # encoder
         self.e1 = nn.Conv2d(nc, ndf, 4, 2, 1)
         self.bn1 = nn.BatchNorm2d(ndf)
 
@@ -31,6 +33,8 @@ class Encoder(nn.Module):
 
         self.fc1 = nn.Linear(ndf*8*4, 2*latent_variable_c)#inputsize,outputsize
         self.fc2 = nn.Linear(ndf*8*4, 2*latent_variable_z)
+        #self.fc_c = nn.Linear(ndf*8*4*4, latent_variable_c)
+        #self.fc_z = nn.Linear(ndf*8*4*4, latent_variable_z)
         self.leakyrelu = nn.LeakyReLU(0.2)
         
     def forward(self, x):
@@ -41,4 +45,6 @@ class Encoder(nn.Module):
         h5 = self.leakyrelu(self.bn5(self.e5(h4)))
         
         h5=h5.view(-1,128*8*4)
+        #h5 = h5.view(-1, ndf*8*4*4)#compressed
+        #print(h5)
         return self.fc1(h5), self.fc2(h5)#size -> latent_variable_size
