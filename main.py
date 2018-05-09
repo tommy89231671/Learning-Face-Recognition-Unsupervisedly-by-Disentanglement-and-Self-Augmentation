@@ -17,13 +17,13 @@ epoch=20
 batch_size=100
 img_size=64
 c_size=1
-z_size=99
+z_size=50
 dataloader=read_dataset('../pic',img_size,batch_size)
 version=input('result version:')
 
-c_loss_weight=0.3
-RF_loss_weight=0.7
-generator_loss_weight=0.7
+c_loss_weight=1
+RF_loss_weight=1
+generator_loss_weight=1
 
 path='./result_'+version+'/arg_'+version+'.txt'
 f=open(path,'a+')

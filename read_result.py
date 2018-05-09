@@ -42,7 +42,7 @@ def read_result(version,epoch):
     for i in range(epoch):
         Dloss[i]=real_result[i][0]+fake_result[i][0]
     
-    f,(plt1, plt2,plt3,plt4,plt5,plt6)=plt.subplots(6)
+    f,(plt1, plt2,plt3,plt4,plt5,plt6)=plt11.subplots(6)
     f.subplots_adjust(hspace = 1)
     plt1.set_title('real_loss')
     plt1.plot(range(epoch),real_result)
@@ -64,8 +64,8 @@ def read_result(version,epoch):
     
     plt6.set_title('kl_loss')
     plt6.plot(range(epoch),kl_result)
-    plt.savefig('./result_'+version+'/LOSS.png')
-    #plt.show()
+    plt11.savefig('./result_'+version+'/LOSS.png')
+    #plt11.show()
     
     
     plt.title('Real+fake vs reconstruction')
