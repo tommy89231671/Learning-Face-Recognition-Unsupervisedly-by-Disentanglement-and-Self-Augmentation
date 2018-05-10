@@ -5,10 +5,15 @@ https://drive.google.com/file/d/1TDphufJnVbx5jBBPI1qWPzqePlpcnjoh/view?usp=shari
 
 Model Graph:
 
-![image]( https://github.com/tommy89231671/Project/blob/0509_fix/Model_graph.jpg)
+![image]()
 
-Add init weight
-Add KL and VAE_reconstruction_loss
+Adjust optimizer G and Q
+G opt by G
+Q opt by G DQ Q
+without update_twice
+G_input only from Encoder(z,c)
+
+
 
  
  
