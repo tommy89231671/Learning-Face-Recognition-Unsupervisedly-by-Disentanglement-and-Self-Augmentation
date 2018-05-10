@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """
 Created on Thu May  3 14:15:26 2018
-
 @author: tommy
 """
 import torch
@@ -13,7 +12,7 @@ import torch.nn.functional as F
 
 '''
 def KL_divergence(c_distribution,z_distribution,batch_size,c_size,z_size):
-    c_zero_mean= torch.FloatTensor(batch_size, c_size).cuda()
+    c_zero_mean= torch.FloatTensor(batch_size, c_size).()
     c_zero_mean=Variable(c_zero_mean)
     c_zero_mean.data.fill_(0.0)
     z_zero_mean = torch.FloatTensor(batch_size, z_size).cuda()
@@ -68,8 +67,8 @@ class Trainer:
     
 
     optimD = optim.Adam([{'params':self.DQ.parameters()}, {'params':self.D.parameters()}], lr=0.0002, betas=(0.5, 0.99))
-    optimQ = optim.Adam([{'params':self.DQ.parameters()}, {'params':self.Q.parameters()}], lr=0.0002, betas=(0.5, 0.99))
-    optimG = optim.Adam([{'params':self.G.parameters()}, {'params':self.Q.parameters()}], lr=0.001, betas=(0.5, 0.99))
+    optimQ = optim.Adam([{'params':self.G.parameters()},{'params':self.DQ.parameters()}, {'params':self.Q.parameters()}], lr=0.0002, betas=(0.5, 0.99))
+    optimG = optim.Adam([{'params':self.G.parameters()}], lr=0.002, betas=(0.5, 0.99))
     optimVAE =optim.Adam([{'params':self.Encoder.parameters()}, {'params':self.G.parameters()}], lr=0.0002, betas=(0.5, 0.99))
     optimEncoder = optim.Adam([{'params':self.Encoder.parameters()}], lr=0.0002, betas=(0.5, 0.99))
     
@@ -97,6 +96,9 @@ class Trainer:
             #print(dq1)
             x_real_result = self.D(dq1)
             label.data.fill_(1.0)
+            
+            #print()
+    
             loss_real = self.RF_loss_weight*criterionBCE(x_real_result, label)
             loss_real.backward()
           
@@ -110,15 +112,14 @@ class Trainer:
             """"Discriminator's fake part"""
             c_distribution =torch.distributions.Normal(c_mean, torch.exp(c_logvar))
             z_distribution= torch.distributions.Normal(z_mean, torch.exp(z_logvar))
+              
+            
             c=c_distribution.sample()
             z=z_distribution.sample()
             
             
             #z.data.copy_(fix_noise)#fix noise to train
             
-#            z.data=torch.randn(z.size()).cuda()#changing noise to train
-#            
-#            c.data=torch.randn(c.size()).cuda()
            
             G_input = torch.cat([z,c], 1).view(-1,self.c_size+self.z_size, 1, 1)
             
@@ -131,7 +132,7 @@ class Trainer:
             
             
             optimD.step()
-            
+            '''
             """Find generator_loss"""
             optimG.zero_grad()
             optimQ.zero_grad()
@@ -152,8 +153,26 @@ class Trainer:
             G_loss.backward(retain_graph=True)
             optimQ.step()
             optimG.step()
+            '''
+            optimG.zero_grad()
             
+            dq = self.DQ(x_fake)
+            x_fake_result = self.D(dq)
+            label.data.fill_(1.0)
+    
+            generator_loss = self.generator_loss_weight*criterionBCE(x_fake_result, label)
+            generator_loss.backward(retain_graph=True)
+            optimG.step()
             
+            optimQ.zero_grad()
+            q= self.Q(dq)
+            
+            """Find C_losss and combine Closs and generator_loss"""
+            C_loss = self.c_loss_weight*criterionMSE(q,c)
+            C_loss.backward(retain_graph=True)
+            #G_loss = generator_loss + C_loss
+            #G_loss.backward(retain_graph=True)
+            optimQ.step()
             
             
             
@@ -164,7 +183,7 @@ class Trainer:
             z_kl_divergence = torch.sum(0.5 * (z_mean**2 + torch.exp(z_logvar) - z_logvar -1))
             c_kl_divergence = torch.sum(0.5 * (c_mean**2 + torch.exp(c_logvar) - c_logvar -1))
             KL=z_kl_divergence+c_kl_divergence
-            KL.backward()
+            KL.backward(retain_graph=True)
             optimEncoder.step()
             #print((x_fake.view(x_fake.size(0),-1),x_real.view(x_real.size(0),-1)))
             
@@ -172,13 +191,17 @@ class Trainer:
             vae_reconstruct_loss = criterionMSE(x_fake.view(x_fake.size(0),-1),x_real.view(x_real.size(0),-1))
             
             #print(vae_reconstruct_loss)
-            vae_reconstruct_loss.backward()
+            vae_reconstruct_loss.backward(retain_graph=True)
             #vae_loss=vae_reconstruct_loss+KL
             #vae_loss.backward()
-            
-            
-            #
             optimVAE.step()
+            
+            """update generator more"""
+            
+            
+            
+            
+            
             #c_kl_divergence,z_kl_divergence=KL_divergence(c_distribution,z_distribution,self.batch_size,self.c_size,self.z_size)
             
             
