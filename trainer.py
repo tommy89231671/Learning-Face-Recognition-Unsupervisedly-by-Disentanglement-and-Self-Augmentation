@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """
 Created on Thu May  3 14:15:26 2018
-
 @author: tommy
 """
 import torch
@@ -13,7 +12,7 @@ import torch.nn.functional as F
 
 '''
 def KL_divergence(c_distribution,z_distribution,batch_size,c_size,z_size):
-    c_zero_mean= torch.FloatTensor(batch_size, c_size).cuda()
+    c_zero_mean= torch.FloatTensor(batch_size, c_size).()
     c_zero_mean=Variable(c_zero_mean)
     c_zero_mean.data.fill_(0.0)
     z_zero_mean = torch.FloatTensor(batch_size, z_size).cuda()
@@ -30,7 +29,7 @@ def KL_divergence(c_distribution,z_distribution,batch_size,c_size,z_size):
 class Trainer:
 
   def __init__(self,G,DQ,D,Q,Encoder,batch_size,img_size,c_size,z_size,dataloader,version
-               ,c_loss_weight,RF_loss_weight,generator_loss_weight,epoch):
+               ,c_loss_weight,RF_loss_weight,generator_loss_weight,reconstruction_loss_weight,kl_loss_weight,epoch):
 
     self.G = G
     self.DQ =DQ
@@ -47,13 +46,15 @@ class Trainer:
     self.RF_loss_weight=RF_loss_weight
     self.generator_loss_weight=generator_loss_weight
     self.epoch=epoch
+    self.reconstruction_loss_weight=reconstruction_loss_weight
+    self.kl_loss_weight=kl_loss_weight
   
   def train(self):
-    x_real = torch.FloatTensor(self.batch_size, 1, self.img_size, self.img_size).cuda()
-    label = torch.FloatTensor(self.batch_size,1).cuda()
+    x_real = torch.FloatTensor(self.batch_size, 1, self.img_size, self.img_size).cuda(1)
+    label = torch.FloatTensor(self.batch_size,1).cuda(1)
     #dis_c = torch.FloatTensor(self.batch_size, dis_c_size).cuda()
-    c = torch.FloatTensor(self.batch_size, self.c_size).cuda()
-    z = torch.FloatTensor(self.batch_size, self.z_size).cuda()
+    c = torch.FloatTensor(self.batch_size, self.c_size).cuda(1)
+    z = torch.FloatTensor(self.batch_size, self.z_size).cuda(1)
 
     x_real = Variable(x_real)
     label = Variable(label)
@@ -61,15 +62,15 @@ class Trainer:
     c = Variable(c)
     z = Variable(z)
 
-    criterionBCE = nn.BCELoss( ).cuda()
+    criterionBCE = nn.BCELoss( ).cuda(1)
     #criterionKL=nn.KLDivLoss(size_average=False)
-    criterionMSE = nn.MSELoss().cuda()
+    criterionMSE = nn.MSELoss().cuda(1)
     #criterionReconstuct = F.binary_cross_entropy().cuda()
     
 
     optimD = optim.Adam([{'params':self.DQ.parameters()}, {'params':self.D.parameters()}], lr=0.0002, betas=(0.5, 0.99))
-    optimQ = optim.Adam([{'params':self.DQ.parameters()}, {'params':self.Q.parameters()}], lr=0.0002, betas=(0.5, 0.99))
-    optimG = optim.Adam([{'params':self.G.parameters()}, {'params':self.Q.parameters()}], lr=0.001, betas=(0.5, 0.99))
+    optimQ = optim.Adam([{'params':self.G.parameters()},{'params':self.DQ.parameters()}, {'params':self.Q.parameters()}], lr=0.0002, betas=(0.5, 0.99))
+    optimG = optim.Adam([{'params':self.G.parameters()}], lr=0.002, betas=(0.5, 0.99))
     optimVAE =optim.Adam([{'params':self.Encoder.parameters()}, {'params':self.G.parameters()}], lr=0.0002, betas=(0.5, 0.99))
     optimEncoder = optim.Adam([{'params':self.Encoder.parameters()}], lr=0.0002, betas=(0.5, 0.99))
     
@@ -97,32 +98,45 @@ class Trainer:
             #print(dq1)
             x_real_result = self.D(dq1)
             label.data.fill_(1.0)
+            
+            #print()
+    
             loss_real = self.RF_loss_weight*criterionBCE(x_real_result, label)
             loss_real.backward()
           
             """Encoder part"""
-            c_en,z_en=self.Encoder(x_real)
-            c_mean,c_logvar=torch.chunk(c_en,2,dim=1)
-            z_mean,z_logvar=torch.chunk(z_en,2,dim=1)
             
             
+            if epoch%2==0:
+              c_en,z_en=self.Encoder(x_real)
+              c_mean,c_logvar=torch.chunk(c_en,2,dim=1)
+              z_mean,z_logvar=torch.chunk(z_en,2,dim=1)
+              c_distribution =torch.distributions.Normal(c_mean, torch.exp(c_logvar))
+              z_distribution= torch.distributions.Normal(z_mean, torch.exp(z_logvar))  
+              c=c_distribution.sample()
+              z=z_distribution.sample()
             
-            """"Discriminator's fake part"""
-            c_distribution =torch.distributions.Normal(c_mean, torch.exp(c_logvar))
-            z_distribution= torch.distributions.Normal(z_mean, torch.exp(z_logvar))
-            c=c_distribution.sample()
-            z=z_distribution.sample()
+            
+            else:
+              z.data=torch.randn(z.size()).cuda(1)#changing noise to train
+              c.data=torch.randn(c.size()).cuda(1)
             
             
             #z.data.copy_(fix_noise)#fix noise to train
             
-#            z.data=torch.randn(z.size()).cuda()#changing noise to train
-#            
-#            c.data=torch.randn(c.size()).cuda()
-           
+            '''
+            c_en,z_en=self.Encoder(x_real)
+            c_mean,c_logvar=torch.chunk(c_en,2,dim=1)
+            z_mean,z_logvar=torch.chunk(z_en,2,dim=1)
+            c_distribution =torch.distributions.Normal(c_mean, torch.exp(c_logvar))
+            z_distribution= torch.distributions.Normal(z_mean, torch.exp(z_logvar))  
+            c=c_distribution.sample()
+            z=z_distribution.sample()
+            '''
             G_input = torch.cat([z,c], 1).view(-1,self.c_size+self.z_size, 1, 1)
             
             x_fake = self.G(G_input)
+            
             dq2 = self.DQ(x_fake.detach())
             x_fake_result = self.D(dq2)
             label.data.fill_(0.0)
@@ -132,47 +146,67 @@ class Trainer:
             
             optimD.step()
             
-            """Find generator_loss"""
             optimG.zero_grad()
-            optimQ.zero_grad()
+            
             dq = self.DQ(x_fake)
             x_fake_result = self.D(dq)
             label.data.fill_(1.0)
     
             generator_loss = self.generator_loss_weight*criterionBCE(x_fake_result, label)
-            #generator_loss.backward()
+            generator_loss.backward(retain_graph=True)
+            optimG.step()
             
-            
+            optimQ.zero_grad()
             q= self.Q(dq)
             
             """Find C_losss and combine Closs and generator_loss"""
             C_loss = self.c_loss_weight*criterionMSE(q,c)
-            
-            G_loss = generator_loss + C_loss
-            G_loss.backward()
+            C_loss.backward(retain_graph=True)
+            #G_loss = generator_loss + C_loss
+            #G_loss.backward(retain_graph=True)
             optimQ.step()
-            optimG.step()
             
             
+            optimVAE.zero_grad()
+            if epoch%2==0:
+              optimEncoder.zero_grad()
+              z_kl_divergence = torch.sum(0.5 * (z_mean**2 + torch.exp(z_logvar) - z_logvar -1))
+              c_kl_divergence = 10*torch.sum(0.5 * (c_mean**2 + torch.exp(c_logvar) - c_logvar -1))
+              KL=self.kl_loss_weight*(z_kl_divergence+c_kl_divergence)
+              KL.backward(retain_graph=True)
+              optimEncoder.step()
+              
+            vae_reconstruct_loss = self.reconstruction_loss_weight*criterionMSE(x_fake.view(x_fake.size(0),-1),x_real.view(x_real.size(0),-1))
+            
+            #print(vae_reconstruct_loss)
+            vae_reconstruct_loss.backward(retain_graph=True)
+            #vae_loss=vae_reconstruct_loss+KL
+            #vae_loss.backward()
+            optimVAE.step()
             
             
-            
-            
-            #vae_reconstruct_loss = F.binary_cross_entropy(x_fake,x_real, size_average=False).cuda()
+            '''
             optimVAE.zero_grad()
             optimEncoder.zero_grad()
-            z_kl_divergence = torch.sum(0.5 * (z_mean**2 + torch.exp(z_logvar) - 2*z_logvar -1))
-            c_kl_divergence = torch.sum(0.5 * (c_mean**2 + torch.exp(c_logvar) - 2*c_logvar -1))
-            KL=z_kl_divergence+c_kl_divergence
+            z_kl_divergence = torch.sum(0.5 * (z_mean**2 + torch.exp(z_logvar) - z_logvar -1))
+            c_kl_divergence = 10*torch.sum(0.5 * (c_mean**2 + torch.exp(c_logvar) - c_logvar -1))
+            KL=self.kl_loss_weight*(z_kl_divergence+c_kl_divergence)
             KL.backward(retain_graph=True)
             optimEncoder.step()
             #print((x_fake.view(x_fake.size(0),-1),x_real.view(x_real.size(0),-1)))
             
             #input('en')
-            vae_reconstruct_loss = criterionMSE(x_fake.view(x_fake.size(0),-1),x_real.view(x_real.size(0),-1))
-            optimVAE.step()
-            #c_kl_divergence,z_kl_divergence=KL_divergence(c_distribution,z_distribution,self.batch_size,self.c_size,self.z_size)
+            vae_reconstruct_loss = self.reconstruction_loss_weight*criterionMSE(x_fake.view(x_fake.size(0),-1),x_real.view(x_real.size(0),-1))
             
+            #print(vae_reconstruct_loss)
+            vae_reconstruct_loss.backward(retain_graph=True)
+            #vae_loss=vae_reconstruct_loss+KL
+            #vae_loss.backward()
+            optimVAE.step()
+            '''
+            
+            """update generator more"""
+           
             
             
             
@@ -181,6 +215,14 @@ class Trainer:
                 generator_loss.data.cpu().numpy(),vae_reconstruct_loss.data.cpu().numpy(),KL.data.cpu().numpy())
         
         print(result)
+        klresult='c_kl:'+str(c_kl_divergence)+'/'+'z_kl:'+str(z_kl_divergence)
+        #print('c_kl:'+str(c_kl_divergence))
+        #print('z_kl:'+str(z_kl_divergence))
+        pathkl='./result_'+self.version+'/kl_'+self.version+'.txt'
+        
+        f1=open(pathkl,'a+')
+        f1.write(klresult+'\n')
+        f1.close()
         
         path='./result_'+self.version+'/result_'+self.version+'.txt'
         
@@ -189,7 +231,20 @@ class Trainer:
         f.close()
         
         
-        
+        if epoch%2==0:
+              c_en,z_en=self.Encoder(x_real)
+              c_mean,c_logvar=torch.chunk(c_en,2,dim=1)
+              z_mean,z_logvar=torch.chunk(z_en,2,dim=1)
+              c_distribution =torch.distributions.Normal(c_mean, torch.exp(c_logvar))
+              z_distribution= torch.distributions.Normal(z_mean, torch.exp(z_logvar))  
+              c=c_distribution.sample()
+              z=z_distribution.sample()
+            
+            
+        else:
+              z.data=torch.randn(z.size()).cuda(1)#changing noise to train
+              c.data=torch.randn(c.size()).cuda(1)
+        '''
         c_en,z_en=self.Encoder(x_real)
         c_mean,c_logvar=torch.chunk(c_en,2,dim=1)
         z_mean,z_logvar=torch.chunk(z_en,2,dim=1)
@@ -198,10 +253,10 @@ class Trainer:
         z_distribution= torch.distributions.Normal(z_mean, torch.exp(z_logvar))
         c=c_distribution.sample()
         z=z_distribution.sample()
+        '''
         
         
-        
-        G_input = torch.cat([z,c], 1).view(-1,self.c_size+self.z_size, 1, 1).cuda()
+        G_input = torch.cat([z,c], 1).view(-1,self.c_size+self.z_size, 1, 1).cuda(1)
          
         x_save = self.G(G_input)
           
