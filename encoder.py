@@ -67,7 +67,7 @@ class Encoder(nn.Module):
         h5=h5.view(-1,128*8*4)
         return self.fc1(h5), self.fc2(h5)
     '''    
-    def forward(self, x,option):
+    def forward(self, x):
         #print(self.e1(x))
         h1 = self.leakyrelu(self.bn1(self.e1(x)))
         h2 = self.leakyrelu(self.bn2(self.e2(h1)))
@@ -77,13 +77,8 @@ class Encoder(nn.Module):
         
         h5=h5.view(-1,128*8*4)
         
-        if option==0:#do siamese
-          return self.fc3(h5)
-        elif option==1:#do encoder
-          return self.fc1(h5), self.fc2(h5)
-        #h5 = h5.view(-1, ndf*8*4*4)#compressed
-        #print(h5)
-        #return self.fc1(h5), self.fc2(h5)#size -> latent_variable_size
+        
+        return self.fc1(h5), self.fc2(h5)#size -> latent_variable_size
         
         
         

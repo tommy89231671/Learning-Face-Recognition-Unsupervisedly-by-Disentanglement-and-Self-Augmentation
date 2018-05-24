@@ -94,13 +94,32 @@ class Trainer:
           optimEncoder.zero_grad()
            
           
-          output1=self.Encoder(img0,0)
-          output2=self.Encoder(img1,0)
+          #output1=self.Encoder(img0,0)
+          #output2=self.Encoder(img1,0)
+          
+          c1_en,z1_en=self.Encoder(img0)
+          c1_mean,c1_logvar=torch.chunk(c1_en,2,dim=1)
+          z1_mean,z1_logvar=torch.chunk(z1_en,2,dim=1)
+          c1_distribution =torch.distributions.Normal(c1_mean, torch.exp(c1_logvar))
+          z1_distribution= torch.distributions.Normal(z1_mean, torch.exp(z1_logvar))  
+          c1=c1_distribution.sample()
+          z1=z1_distribution.sample()
+          
+          c2_en,z2_en=self.Encoder(img1)
+          c2_mean,c2_logvar=torch.chunk(c2_en,2,dim=1)
+          z2_mean,z2_logvar=torch.chunk(z2_en,2,dim=1)
+          c2_distribution =torch.distributions.Normal(c2_mean, torch.exp(c2_logvar))
+          z2_distribution= torch.distributions.Normal(z2_mean, torch.exp(z2_logvar))  
+          c2=c2_distribution.sample()
+          z2=z2_distribution.sample()
           #print(img0)
           #print(img00)
           #input('enter')
           #print(img1)
-             
+          output1 = torch.cat([z1,c1], 1).view(-1,self.c_size+self.z_size) 
+          output2 = torch.cat([z2,c2], 1).view(-1,self.c_size+self.z_size)   
+          #print(output1)
+          #print(output2)
           loss_contrastive = criterionContrastive(output1,output2,label)
           #print(loss_contrastive)
           #input('enter')
@@ -159,7 +178,7 @@ class Trainer:
             
             if epoch%2==0:
               #print(x_real)
-              c_en,z_en=self.Encoder(x_real,1)
+              c_en,z_en=self.Encoder(x_real)
               c_mean,c_logvar=torch.chunk(c_en,2,dim=1)
               z_mean,z_logvar=torch.chunk(z_en,2,dim=1)
               c_distribution =torch.distributions.Normal(c_mean, torch.exp(c_logvar))
@@ -283,7 +302,7 @@ class Trainer:
         
         
         if epoch%2==0:
-              c_en,z_en=self.Encoder(x_real,1)
+              c_en,z_en=self.Encoder(x_real)
               c_mean,c_logvar=torch.chunk(c_en,2,dim=1)
               z_mean,z_logvar=torch.chunk(z_en,2,dim=1)
               c_distribution =torch.distributions.Normal(c_mean, torch.exp(c_logvar))
