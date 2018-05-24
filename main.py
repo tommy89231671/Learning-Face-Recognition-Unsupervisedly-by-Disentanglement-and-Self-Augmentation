@@ -21,9 +21,11 @@ z_size=99
 dataloader=read_dataset('../pic',img_size,batch_size)
 version=input('result version:')
 
-c_loss_weight=0.3
-RF_loss_weight=0.7
-generator_loss_weight=0.7
+c_loss_weight=1
+RF_loss_weight=2
+generator_loss_weight=2
+kl_loss_weight=5
+reconstruction_loss_weight=10
 
 path='./result_'+version+'/arg_'+version+'.txt'
 f=open(path,'a+')
@@ -48,24 +50,26 @@ def weights_init(m):
 
 
 g=Generator(c_size+z_size)
-g.apply(weights_init)
+#g.apply(weights_init)
 
 d=Discriminator()
-d.apply(weights_init)
+#d.apply(weights_init)
 
 q=Q(c_size)
-q.apply(weights_init)
+#q.apply(weights_init)
 
 dq=D_Q_commonlayer()
-dq.apply(weights_init)  
+#dq.apply(weights_init)  
+
+
 for i in [dq, d, q, g,encoder]:
-  i.cuda()
+  i.cuda(1)
     #i.apply(weights_init)
   
 trainer = Trainer(g,dq, d, q,encoder,batch_size,img_size,c_size,z_size,dataloader,version
-                    ,c_loss_weight,RF_loss_weight,generator_loss_weight,epoch)
+                    ,c_loss_weight,RF_loss_weight,generator_loss_weight,reconstruction_loss_weight,kl_loss_weight,epoch)
 trainer.train()
-read_result(version,epoch)
+#read_result(version,epoch)
 """
 for j in range(1,9):
   v=version+str(j+1)

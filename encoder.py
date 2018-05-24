@@ -33,11 +33,42 @@ class Encoder(nn.Module):
 
         self.fc1 = nn.Linear(ndf*8*4, 2*latent_variable_c)#inputsize,outputsize
         self.fc2 = nn.Linear(ndf*8*4, 2*latent_variable_z)
+        
+        self.fc3 = nn.Sequential(
+            nn.Linear(ndf*8*4, 500),
+            nn.ReLU(inplace=True),
+            nn.Linear(500, 10),
+            nn.Linear(10, 5))
         #self.fc_c = nn.Linear(ndf*8*4*4, latent_variable_c)
         #self.fc_z = nn.Linear(ndf*8*4*4, latent_variable_z)
         self.leakyrelu = nn.LeakyReLU(0.2)
+    '''
+    def siamese_forward(self,input1,input2):
+        a1 = self.leakyrelu(self.bn1(self.e1(input1)))
+        a2 = self.leakyrelu(self.bn2(self.e2(a1)))
+        a3 = self.leakyrelu(self.bn3(self.e3(a2)))
+        a4 = self.leakyrelu(self.bn4(self.e4(a3)))
+        a5 = self.leakyrelu(self.bn5(self.e5(a4)))
         
-    def forward(self, x):
+        b1 = self.leakyrelu(self.bn1(self.e1(input2)))
+        b2 = self.leakyrelu(self.bn2(self.e2(b1)))
+        b3 = self.leakyrelu(self.bn3(self.e3(b2)))
+        b4 = self.leakyrelu(self.bn4(self.e4(b3)))
+        b5 = self.leakyrelu(self.bn5(self.e5(b4)))
+        
+        return 
+        
+    def normal_forward(self,x):
+        h1 = self.leakyrelu(self.bn1(self.e1(x)))
+        h2 = self.leakyrelu(self.bn2(self.e2(h1)))
+        h3 = self.leakyrelu(self.bn3(self.e3(h2)))
+        h4 = self.leakyrelu(self.bn4(self.e4(h3)))
+        h5 = self.leakyrelu(self.bn5(self.e5(h4)))
+        h5=h5.view(-1,128*8*4)
+        return self.fc1(h5), self.fc2(h5)
+    '''    
+    def forward(self, x,option):
+        #print(self.e1(x))
         h1 = self.leakyrelu(self.bn1(self.e1(x)))
         h2 = self.leakyrelu(self.bn2(self.e2(h1)))
         h3 = self.leakyrelu(self.bn3(self.e3(h2)))
@@ -45,6 +76,15 @@ class Encoder(nn.Module):
         h5 = self.leakyrelu(self.bn5(self.e5(h4)))
         
         h5=h5.view(-1,128*8*4)
+        
+        if option==0:#do siamese
+          return self.fc3(h5)
+        elif option==1:#do encoder
+          return self.fc1(h5), self.fc2(h5)
         #h5 = h5.view(-1, ndf*8*4*4)#compressed
         #print(h5)
-        return self.fc1(h5), self.fc2(h5)#size -> latent_variable_size
+        #return self.fc1(h5), self.fc2(h5)#size -> latent_variable_size
+        
+        
+        
+        
