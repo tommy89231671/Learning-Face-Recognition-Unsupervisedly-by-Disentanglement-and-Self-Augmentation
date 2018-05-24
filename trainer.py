@@ -44,6 +44,7 @@ class Trainer:
     x_real = torch.FloatTensor(self.batch_size, 1, self.img_size, self.img_size).cuda(1)
     img0=torch.FloatTensor(self.batch_size, 3, self.img_size, self.img_size).cuda(1)
     img1=torch.FloatTensor(self.batch_size, 3, self.img_size, self.img_size).cuda(1)
+    label_fix=torch.FloatTensor(self.batch_size,1).cuda(1)
     label = torch.FloatTensor(self.batch_size,1).cuda(1)
     #dis_c = torch.FloatTensor(self.batch_size, dis_c_size).cuda()
     c = torch.FloatTensor(self.batch_size, self.c_size).cuda(1)
@@ -51,14 +52,14 @@ class Trainer:
     img0 = Variable(img0)
     img1 = Variable(img1)
     x_real = Variable(x_real)
+    label_fix = Variable(label_fix)
     label = Variable(label)
     #dis_c = Variable(dis_c)
     c = Variable(c)
     z = Variable(z)
-
     criterionBCE = nn.BCELoss( ).cuda(1)
     criterionMSE = nn.MSELoss().cuda(1)
-    criterionContrastive = siamese.ContrastiveLoss(margin=2.0,batch_size=self.batch_size)
+    criterionContrastive = siamese.ContrastiveLoss(margin=20.0,batch_size=self.batch_size)
     
 
     optimD = optim.Adam([{'params':self.DQ.parameters()}, {'params':self.D.parameters()}], lr=0.0002, betas=(0.5, 0.99))
@@ -86,7 +87,7 @@ class Trainer:
           #img0, img1 , label = img0.cuda(1), img1.cuda(1) , label.cuda(1)
           
           #print(data)
-          
+          label_fix.data.copy_(labelx)
           img0.data.resize_(img00.size())
           img0.data.copy_(img00)
           img1.data.resize_(img11.size())
@@ -120,7 +121,7 @@ class Trainer:
           output2 = torch.cat([z2,c2], 1).view(-1,self.c_size+self.z_size)   
           #print(output1)
           #print(output2)
-          loss_contrastive = criterionContrastive(output1,output2,label)
+          loss_contrastive = criterionContrastive(output1,output2,labelx)
           #print(loss_contrastive)
           #input('enter')
           #loss_contrastive=Variable(loss_contrastive)
