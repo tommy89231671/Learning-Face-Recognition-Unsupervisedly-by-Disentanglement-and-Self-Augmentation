@@ -1,0 +1,8 @@
+epoch=50
+batch_size=100
+img_size=64
+c_size=1
+z_size=99
+RF_loss_weight=generator_loss_weight=2
+c_loss_weight=1
+
