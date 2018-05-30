@@ -17,7 +17,7 @@ epoch=20
 batch_size=100
 img_size=64
 c_size=1
-z_size=99
+z_size=19
 dataloader=read_dataset('../pic',img_size,batch_size)
 version=input('result version:')
 

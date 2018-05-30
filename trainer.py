@@ -14,7 +14,7 @@ import siamese
 import torchvision.datasets as dset
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader,Dataset
-
+import tsne
 
 
 class Trainer:
@@ -71,22 +71,36 @@ class Trainer:
     
     """DO siamese first 10 epoch"""
     
-    for i in range(10):
+    for i in range(20):
         folder_dataset = dset.ImageFolder('/home/eternalding/tommy/training_data/')
         siamese_dataset = siamese.SiameseNetworkDataset(imageFolderDataset=folder_dataset,
                                         transform=transforms.Compose([transforms.Resize(self.img_size),transforms.CenterCrop(self.img_size),transforms.ToTensor()]),
                                         should_invert=False)                             
                                                                       
-                                       
+        '''fix_dataset=siamese_dataset = siamese.SiameseFix(imageFolderDataset=folder_dataset,
+                                        transform=transforms.Compose([transforms.Resize(self.img_size),transforms.CenterCrop(self.img_size),transforms.ToTensor()]),
+                                        should_invert=False)                                    
+        '''
+        
         train_dataloader = DataLoader(siamese_dataset,
                                       shuffle=False,
                                       #num_workers=8,
                                       batch_size=self.batch_size)
+        '''fix_dataloader= DataLoader(fix_dataset,
+                                      shuffle=False,
+                                      #num_workers=8,
+                                      batch_size=self.batch_size)
+        '''
+        test_img=torch.FloatTensor(self.batch_size, 3, self.img_size, self.img_size).cuda(1)
+        test_img = Variable(test_img)
+        
+       
+        
         for num_iters, data in enumerate(train_dataloader,0):
-          img00, img11 , labelx = data
+          img00, img11 , labelx,person_class = data
           #img0, img1 , label = img0.cuda(1), img1.cuda(1) , label.cuda(1)
           
-          #print(data)
+          #print(person_class)
           label_fix.data.copy_(labelx)
           img0.data.resize_(img00.size())
           img0.data.copy_(img00)
@@ -101,27 +115,33 @@ class Trainer:
           c1_en,z1_en=self.Encoder(img0)
           c1_mean,c1_logvar=torch.chunk(c1_en,2,dim=1)
           z1_mean,z1_logvar=torch.chunk(z1_en,2,dim=1)
-          c1_distribution =torch.distributions.Normal(c1_mean, torch.exp(c1_logvar))
-          z1_distribution= torch.distributions.Normal(z1_mean, torch.exp(z1_logvar))  
-          c1=c1_distribution.sample()
-          z1=z1_distribution.sample()
+          
+          qn = torch.norm(z1_mean, p=2, dim=0).detach()
+          z1_mean = z1_mean.div(qn.expand_as(z1_mean))
+          
+          cz1_mean=torch.cat([c1_mean,z1_mean], 1).view(-1,self.c_size+self.z_size) 
+          qn = torch.norm(cz1_mean, p=2, dim=0).detach()
+          cz1_mean = cz1_mean.div(qn.expand_as(cz1_mean))
           
           c2_en,z2_en=self.Encoder(img1)
           c2_mean,c2_logvar=torch.chunk(c2_en,2,dim=1)
           z2_mean,z2_logvar=torch.chunk(z2_en,2,dim=1)
-          c2_distribution =torch.distributions.Normal(c2_mean, torch.exp(c2_logvar))
-          z2_distribution= torch.distributions.Normal(z2_mean, torch.exp(z2_logvar))  
-          c2=c2_distribution.sample()
-          z2=z2_distribution.sample()
+          
+          qn = torch.norm(z2_mean, p=2, dim=0).detach()
+          z2_mean = z2_mean.div(qn.expand_as(z2_mean))
+          
+          cz2_mean=torch.cat([c2_mean,z2_mean], 1).view(-1,self.c_size+self.z_size) 
+          qn = torch.norm(cz2_mean, p=2, dim=0).detach()
+          cz2_mean = cz2_mean.div(qn.expand_as(cz2_mean))
           #print(img0)
           #print(img00)
           #input('enter')
           #print(img1)
-          output1 = torch.cat([z1,c1], 1).view(-1,self.c_size+self.z_size) 
-          output2 = torch.cat([z2,c2], 1).view(-1,self.c_size+self.z_size)   
+          #output1 = torch.cat([z1,c1], 1).view(-1,self.c_size+self.z_size) 
+          #output2 = torch.cat([z2,c2], 1).view(-1,self.c_size+self.z_size)   
           #print(output1)
           #print(output2)
-          loss_contrastive = criterionContrastive(output1,output2,labelx)
+          loss_contrastive = criterionContrastive(cz1_mean,cz2_mean,labelx)
           #print(loss_contrastive)
           #input('enter')
           #loss_contrastive=Variable(loss_contrastive)
@@ -134,7 +154,24 @@ class Trainer:
                 i, num_iters, loss_contrastive.data.cpu().numpy())
         
         print(result)
-    
+        cz_mean=torch.FloatTensor(self.batch_size,-1).cuda(1)
+        cz_mean=Variable(cz_mean)
+        for num_iters, data in enumerate(train_dataloader,0):
+          img00, img11 , labelx,person_class = data
+          test_img.data.resize_(img00.size())
+          test_img.data.copy_(img00)
+          c_en,z_en=self.Encoder(test_img)
+          c_mean,c_logvar=torch.chunk(c_en,2,dim=1)
+          z_mean,z_logvar=torch.chunk(z_en,2,dim=1)
+          
+          qn = torch.norm(z_mean, p=2, dim=0).detach()
+          z_mean = z_mean.div(qn.expand_as(z_mean))
+          
+          cz_mean=torch.cat([c_mean,z_mean], 1).view(-1,self.c_size+self.z_size) 
+          qn = torch.norm(cz_mean, p=2, dim=0).detach()
+          cz_mean = cz_mean.div(qn.expand_as(cz_mean))
+          break
+        tsne.main(cz_mean.data.cpu().numpy(),i,self.version,person_class)
     
     
     

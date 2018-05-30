@@ -21,8 +21,6 @@ import torch.nn as nn
 from torch import optim
 import torch.nn.functional as F
 
-
-  
 class SiameseNetworkDataset(Dataset):
     
     def __init__(self,imageFolderDataset,transform=None,should_invert=True):
@@ -32,9 +30,9 @@ class SiameseNetworkDataset(Dataset):
         
     def __getitem__(self,index):
         img0_tuple = random.choice(self.imageFolderDataset.imgs)
-        #print(img0_tuple)
+        #print(self.imageFolderDataset.labels)
         #img0 = Image.open(img0_tuple[0])
-        #print(self.transform(img0))
+        #print(img0_tuple[1])
         #we need to make sure approx 50% of images are in the same class
         should_get_same_class = random.randint(0,1) 
         if should_get_same_class:
@@ -54,6 +52,7 @@ class SiameseNetworkDataset(Dataset):
 
         img0 = Image.open(img0_tuple[0])
         img1 = Image.open(img1_tuple[0])
+        
         #img0 = img0.convert("L")
         #img1 = img1.convert("L")
         
@@ -65,7 +64,7 @@ class SiameseNetworkDataset(Dataset):
             img0 = self.transform(img0)
             img1 = self.transform(img1)
         #print(img0)
-        return img0, img1 , torch.from_numpy(np.array([int(img1_tuple[1]!=img0_tuple[1])],dtype=np.float32))
+        return img0, img1 , torch.from_numpy(np.array([int(img1_tuple[1]!=img0_tuple[1])],dtype=np.float32)),img0_tuple[1]
     def __len__(self):
         return len(self.imageFolderDataset.imgs)
 '''        
@@ -88,13 +87,16 @@ class ContrastiveLoss(torch.nn.Module):
         self.batch_size=batch_size
     def forward(self, output1, output2, label):
         euclidean_distance = F.pairwise_distance(output1, output2)
-        #print(output1)
+        #print(euclidean_distance)
         #print(output2)
         a=euclidean_distance**2
+        #print(a)
         b=torch.pow(torch.clamp(self.margin - euclidean_distance, min=0.0), 2)
+        #print(label)
         sum=0
         for i in range(a.size()[0]):
             sum+=float(1-label[i])*float(a[i])+float(label[i])*float(b[i])
+        #print(sum)
         loss_contrastive=Variable(torch.FloatTensor(1),requires_grad=True)
         loss_contrastive.data.fill_(sum/self.batch_size)
         return loss_contrastive
