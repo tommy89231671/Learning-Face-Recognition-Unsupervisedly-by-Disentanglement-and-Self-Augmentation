@@ -140,7 +140,7 @@ for each_video in videos:
           pil_image_2.save(save_dir,'jpeg')
           j=j-1  
       i=i+1;
-  print("ignore rate:",ignore/total_face)     
+    print("ignore rate:",ignore/total_face)     
         
 cap.release()
 
