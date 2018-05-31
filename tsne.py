@@ -172,7 +172,7 @@ def tsne(X=np.array([]), no_dims=2, initial_dims=50, perplexity=30.0):
         # Compute current value of cost function
         if (iter + 1) % 10 == 0:
             C = np.sum(P * np.log(P / Q))
-            print("Iteration %d: error is %f" % (iter + 1, C))
+            #print("Iteration %d: error is %f" % (iter + 1, C))
 
         # Stop lying about P-values
         if iter == 100:
@@ -182,12 +182,12 @@ def tsne(X=np.array([]), no_dims=2, initial_dims=50, perplexity=30.0):
     return Y
 
 def main(X,epoch,version,person_class):
-    YY = tsne(X, 2, 10, 30)
-        
+    YY = tsne(X, 2, 10, 10)
+    #print(YY.shape)
     #pylab.scatter(Y[:, 0], Y[:, 1], 20, labels)
     plt.scatter(YY[:,0],YY[:,1],20,person_class)
     
     na="tsne"+str(epoch)+".png"
     path='./result_'+version+'/'+na
     plt.savefig(path)
-    #plt.show()    
+    plt.clf()
