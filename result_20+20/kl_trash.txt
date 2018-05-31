@@ -1,0 +1,310 @@
+c_kl:Variable containing:
+ 2.8325
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+/z_kl:Variable containing:
+ 6.4291
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+
+c_kl:Variable containing:
+ 7.4826
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+/z_kl:Variable containing:
+ 2.8242
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+
+c_kl:Variable containing:
+ 0.9549
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+/z_kl:Variable containing:
+ 2.6267
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+
+c_kl:Variable containing:
+ 2.5417
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+/z_kl:Variable containing:
+ 6.2313
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+
+c_kl:Variable containing:
+ 0.2562
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+/z_kl:Variable containing:
+ 5.0576
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+
+c_kl:Variable containing:
+ 11.4871
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+/z_kl:Variable containing:
+ 6.7604
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+
+c_kl:Variable containing:
+ 0.8419
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+/z_kl:Variable containing:
+ 10.3001
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+
+c_kl:Variable containing:
+ 3.0924
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+/z_kl:Variable containing:
+ 3.3315
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+
+c_kl:Variable containing:
+ 4.7220
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+/z_kl:Variable containing:
+ 3.8517
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+
+c_kl:Variable containing:
+ 3.8941
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+/z_kl:Variable containing:
+ 9.2480
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+
+c_kl:Variable containing:
+ 0.3403
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+/z_kl:Variable containing:
+ 4.4822
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+
+c_kl:Variable containing:
+ 0.3994
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+/z_kl:Variable containing:
+ 1.8925
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+
+c_kl:Variable containing:
+ 1.4791
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+/z_kl:Variable containing:
+ 3.2399
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+
+c_kl:Variable containing:
+ 3.4843
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+/z_kl:Variable containing:
+ 2.6905
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+
+c_kl:Variable containing:
+ 0.2127
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+/z_kl:Variable containing:
+ 0.9113
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+
+c_kl:Variable containing:
+ 2.1745
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+/z_kl:Variable containing:
+ 4.9740
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+
+c_kl:Variable containing:
+ 0.6966
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+/z_kl:Variable containing:
+ 0.8835
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+
+c_kl:Variable containing:
+ 1.0582
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+/z_kl:Variable containing:
+ 2.0150
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+
+c_kl:Variable containing:
+ 0.8790
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+/z_kl:Variable containing:
+ 2.2463
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+
+c_kl:Variable containing:
+ 1.5399
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+/z_kl:Variable containing:
+ 3.3512
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+
+c_kl:Variable containing:
+-7.7144e+14
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+/z_kl:Variable containing:
+1.00000e-13 *
+  2.2468
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+
+c_kl:Variable containing:
+1.00000e-13 *
+  7.8275
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+/z_kl:Variable containing:
+1.00000e-13 *
+  9.7840
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+
+c_kl:Variable containing:
+1.00000e-13 *
+  7.8821
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+/z_kl:Variable containing:
+1.00000e-13 *
+  7.8803
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+
+c_kl:Variable containing:
+1.00000e-27 *
+  4.7517
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+/z_kl:Variable containing:
+1.00000e-26 *
+  1.3724
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+
+c_kl:Variable containing:
+1.00000e-13 *
+  3.5935
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+/z_kl:Variable containing:
+1.00000e-13 *
+  2.2404
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+
+c_kl:Variable containing:
+1.00000e-13 *
+  7.2814
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+/z_kl:Variable containing:
+1.00000e-26 *
+  1.5666
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+
+c_kl:Variable containing:
+1.00000e-12 *
+  1.0808
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+/z_kl:Variable containing:
+1.00000e-26 *
+  1.3726
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+
+c_kl:Variable containing:
+1.00000e-26 *
+  1.5632
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+/z_kl:Variable containing:
+1.00000e-26 *
+  1.3711
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+
+c_kl:Variable containing:
+1.00000e-13 *
+  7.3261
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+/z_kl:Variable containing:
+1.00000e-13 *
+  7.2805
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+
+c_kl:Variable containing:
+-9.2304e+13
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+/z_kl:Variable containing:
+1.00000e-13 *
+  9.7015
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+
+c_kl:Variable containing:
+-7.6865e+14
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+/z_kl:Variable containing:
+1.00000e-13 *
+  7.6331
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+
+c_kl:Variable containing:
+1.00000e-13 *
+  5.4633
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+/z_kl:Variable containing:
+-9.2709e+13
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+
+c_kl:Variable containing:
+-9.2664e+13
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+/z_kl:Variable containing:
+1.00000e-13 *
+  7.5595
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+
+c_kl:Variable containing:
+1.00000e-13 *
+  7.5057
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+/z_kl:Variable containing:
+1.00000e-26 *
+  1.3705
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+
+c_kl:Variable containing:
+1.00000e-13 *
+  7.6454
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+/z_kl:Variable containing:
+1.00000e-26 *
+  1.5662
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+
+c_kl:Variable containing:
+1.00000e-13 *
+  9.7183
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+/z_kl:Variable containing:
+-7.7521e+14
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+
+c_kl:Variable containing:
+-7.7604e+14
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+/z_kl:Variable containing:
+1.00000e-13 *
+  6.0878
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+
+c_kl:Variable containing:
+-9.2374e+13
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+/z_kl:Variable containing:
+1.00000e-13 *
+  2.2362
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+
+c_kl:Variable containing:
+-7.6848e+14
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+/z_kl:Variable containing:
+-9.3018e+13
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+
+c_kl:Variable containing:
+1.00000e-13 *
+  2.2355
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+/z_kl:Variable containing:
+1.00000e-13 *
+  9.6876
+[torch.cuda.FloatTensor of size 1 (GPU 1)]
+
