@@ -49,18 +49,19 @@ class Trainer:
     img0 = Variable(img0)
     img1 = Variable(img1)
     criterionContrastive = siamese.ContrastiveLoss(margin=self.margin,batch_size=self.batch_size)
-    for i in range(epoch):
-        folder_dataset = dset.ImageFolder("/home/eternalding/tommy/training_data/")
-        siamese_dataset = siamese.SiameseNetworkDataset(imageFolderDataset=folder_dataset,
+    folder_dataset = dset.ImageFolder("/home/eternalding/tommy/training_data/")
+    siamese_dataset = siamese.SiameseNetworkDataset(imageFolderDataset=folder_dataset,
                                         transform=transforms.Compose([transforms.Resize(self.img_size),transforms.CenterCrop(self.img_size),transforms.ToTensor()]),
                                         should_invert=False)                             
                                                                       
         
         
-        train_dataloader = DataLoader(siamese_dataset,
+    train_dataloader = DataLoader(siamese_dataset,
                                       shuffle=False,
                                       #num_workers=8,
                                       batch_size=self.batch_size)
+    for i in range(epoch):
+        
        
         test_img=torch.FloatTensor(self.batch_size, 3, self.img_size, self.img_size).cuda(1)
         test_img = Variable(test_img)
@@ -89,7 +90,7 @@ class Trainer:
           c1_en,z1_en=self.Encoder(img0)
           c1_mean,c1_logvar=torch.chunk(c1_en,2,dim=1)
           z1_mean,z1_logvar=torch.chunk(z1_en,2,dim=1)
-          ss=torch.zeros(100)
+          ss=torch.zeros(self.batch_size)
         
           #print(ss.numpy().shape)
           #print(c1_mean.data.cpu().numpy()[:,0].shape)
@@ -203,7 +204,7 @@ class Trainer:
     optimEncoder = optim.Adam([{'params':self.Encoder.parameters()}], lr=0.0002, betas=(0.5, 0.99))
     
 
-    self.do_siamese(self.pre_epoch,10,optimEncoder,0,0,self.contrastive_loss_weight)
+    self.do_siamese(self.pre_epoch,50,optimEncoder,0,0,self.contrastive_loss_weight)
     
     
     num_iters=0
@@ -230,7 +231,6 @@ class Trainer:
             
             loss_real.backward(retain_graph=True)
           
-            """Encoder part"""
             
             
             
@@ -287,7 +287,7 @@ class Trainer:
             #print(vae_reconstruct_loss)
             vae_reconstruct_loss.backward(retain_graph=True)
             optimVAE.step()
-            
+            #self.do_siamese(1,1,optimEncoder,1,epoch,self.contrastive_loss_weight)  
             
             """randn"""  
             optimD.zero_grad()
@@ -311,11 +311,11 @@ class Trainer:
             generator_loss = self.generator_loss_weight*criterionBCE(x_fake_result, label)
             generator_loss.backward(retain_graph=True)
             optimG.step()           
-            if num_iters%5==0:
-              self.do_siamese(1,10,optimEncoder,1,epoch,self.contrastive_loss_weight)  
+            #if num_iters%3==0:
+            self.do_siamese(1,5,optimEncoder,1,epoch,self.contrastive_loss_weight)  
             """contrastive"""
             #self.do_siamese(1,10,optimEncoder,1)
-        self.do_siamese(5,10,optimEncoder,2,epoch,self.contrastive_loss_weight)
+        self.do_siamese(1,1,optimEncoder,2,epoch,self.contrastive_loss_weight)
           
         result='Epoch/Iter:{0}/{1}, Real loss: {2},fake loss: {3},c loss: {4}, generator_loss: {5},reconstruction_loss: {6},KL_loss: {7}:'.format(
                 epoch, num_iters, loss_real.data.cpu().numpy(),loss_fake.data.cpu().numpy(),C_loss.data.cpu().numpy(),
@@ -354,7 +354,7 @@ class Trainer:
         
         z.data=torch.randn(z.size()).cuda(1)#changing noise to train
         c.data=torch.randn(c.size()).cuda(1)  
-        save_image(x_save.data,f1name, nrow=int(self.batch_size/5))
+        save_image(x_save.data,f1name, nrow=int(self.batch_size/6))
         G_input = torch.cat([z,c], 1).view(-1,self.c_size+self.z_size, 1, 1).cuda(1)
          
         x_save = self.G(G_input)
@@ -362,17 +362,17 @@ class Trainer:
        
         f1name='./result_'+self.version+'/'+str(epoch)+'_rand.png'
           
-        save_image(x_save.data,f1name, nrow=int(self.batch_size/5))
+        save_image(x_save.data,f1name, nrow=int(self.batch_size/6))
     
     
 
     
     
-    gpath='./model/Generator_'+self.version+'.pkl'
-    dpath='./model/Discriminator_'+self.version+'.pkl'
-    qpath='./model/Q_'+self.version+'.pkl'
-    dqpath='./model/DQ_'+self.version+'.pkl'
-    enpath='./model/Encoder_'+self.version+'.pkl'
+    gpath='./result_'+self.version+'/Generator_'+self.version+'.pkl'
+    dpath='./result_'+self.version+'/Discriminator_'+self.version+'.pkl'
+    qpath='./result_'+self.version+'/Q_'+self.version+'.pkl'
+    dqpath='./result_'+self.version+'/DQ_'+self.version+'.pkl'
+    enpath='./result_'+self.version+'/Encoder_'+self.version+'.pkl'
     torch.save(self.G.state_dict(), gpath)
     torch.save(self.D.state_dict(),dpath)
     torch.save(self.Q.state_dict(), qpath)

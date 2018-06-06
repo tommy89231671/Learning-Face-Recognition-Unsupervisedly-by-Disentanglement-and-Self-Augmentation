@@ -39,7 +39,7 @@ class SiameseNetworkDataset(Dataset):
             while True:
                 #keep looping till the same class image is found
                 img1_tuple = random.choice(self.imageFolderDataset.imgs) 
-                if img0_tuple[1]==img1_tuple[1]:
+                if (img0_tuple[1]==img1_tuple[1]):
                     break
         else:
             while True:
@@ -64,6 +64,9 @@ class SiameseNetworkDataset(Dataset):
             img0 = self.transform(img0)
             img1 = self.transform(img1)
         #print(img0)
+ 
+        
+        
         return img0, img1 , torch.from_numpy(np.array([int(img1_tuple[1]!=img0_tuple[1])],dtype=np.float32)),img0_tuple[1]
     def __len__(self):
         return len(self.imageFolderDataset.imgs)

@@ -7,9 +7,14 @@ Created on Wed Apr 11 12:30:06 2018
 import torch
 import torch.nn as nn
 import numpy as np
+import torchvision.transforms as transforms
+from torch.utils.data import DataLoader,Dataset
 from torch.autograd import Variable
 from torchvision.utils import save_image
-
+import siamese
+import torchvision.datasets as dset
+import tsne
+import matplotlib.pyplot as plt
 
 class Generator(nn.Module):
     
@@ -181,7 +186,8 @@ class Encoder(nn.Module):
 version=input('version to read:')
 #arg=input('arg:')
 #version='v2'
-path='/home/eternalding/tommy/project/model/'
+path='/home/eternalding/tommy/project/result_'+version+'/'
+
 gpath=path+'Generator_'+version+'.pkl'
 dpath=path+'Discriminator_'+version+'.pkl'
 qpath=path+'Q_'+version+'.pkl'
@@ -189,9 +195,9 @@ dqpath=path+'DQ_'+version+'.pkl'
 epath=path+'Encoder_'+version+'.pkl'
 
 c_size=1
-z_size=99
+z_size=19
 batch_size=100
-
+img_size=64
 g=Generator(c_size+z_size).cuda(1)
 d=Discriminator().cuda(1)
 q=Q(c_size).cuda(1)
@@ -212,31 +218,100 @@ z=Variable(z)
 zz=torch.randn(z_size,1)
 zz=zz.expand(z_size,100)
 z.data.copy_(torch.t(zz))
+
+folder_dataset = dset.ImageFolder("/home/eternalding/tommy/training_data/")
+siamese_dataset = siamese.SiameseNetworkDataset(imageFolderDataset=folder_dataset,
+                                        transform=transforms.Compose([transforms.Resize(img_size),transforms.CenterCrop(img_size),transforms.ToTensor()]),
+                                        should_invert=False)                             
+                                                                      
+        
+        
+train_dataloader = DataLoader(siamese_dataset,
+                                      shuffle=False,
+                                      #num_workers=8,
+                                      batch_size=batch_size)
+       
+test_img=torch.FloatTensor(batch_size, 3, img_size, img_size).cuda(1)
+test_img = Variable(test_img)
+for ni, data in enumerate(train_dataloader,0):
+      img00, img11 ,_,person_class = data
+      test_img.data.resize_(img00.size())
+      test_img.data.copy_(img00)
+      c_en,z_en=encoder(test_img)
+      c_mean,c_logvar=torch.chunk(c_en,2,dim=1)
+      z_mean,z_logvar=torch.chunk(z_en,2,dim=1)
+              
+      qn = torch.norm(z_mean, p=2, dim=0).detach()
+      z_mean = z_mean.div(qn.expand_as(z_mean))
+              
+      cz_mean=torch.cat([c_mean,z_mean], 1).view(-1,c_size+z_size) 
+      qn = torch.norm(cz_mean, p=2, dim=0).detach()
+      cz_mean = cz_mean.div(qn.expand_as(cz_mean))
+      break
+ss=torch.zeros(batch_size)
+
+YY = tsne.tsne(cz_mean.data.cpu().numpy(), 2, 10, 30)
+    #print(YY.shape)
+    #pylab.scatter(Y[:, 0], Y[:, 1], 20, labels)
+plt.scatter(YY[:,0],YY[:,1],20,person_class)
+fname='/home/eternalding/tommy/project/test_result/'+'test_tsne_'+version+'.png'
+plt.savefig(fname)
+plt.clf()        
+'''   
+a=[0]*6
+for i in range(6):
+  a[i]=[]
+for i,value in enumerate(person_class):
+  a[value].append(c_mean.data.cpu().numpy()[i,0])
+b=[0]*6
+for num,i in enumerate(a):
+  sum=0
+  for j in i:
+    sum+=j
+  #print(len(i))
+  b[num]=sum/len(i)
+print(b)
+'''
+YY = tsne.tsne(c_mean.data.cpu().numpy(), 2, 10, 30)
+    #print(YY.shape)
+    #pylab.scatter(Y[:, 0], Y[:, 1], 20, labels)
+plt.scatter(YY[:,0],YY[:,1],20,person_class)
+fname='/home/eternalding/tommy/project/test_result/'+'test_tsnee_'+version+'.png'
+plt.savefig(fname)
+plt.clf()        
+
+plt.scatter(c_mean.data.cpu().numpy()[:,0],ss.numpy(),20,person_class)
+
+            
+#print(c_mean)
+
+fname='/home/eternalding/tommy/project/test_result/'+'test_c_vs_class_'+version+'.png'
+plt.savefig(fname)
+plt.clf()
+
+
+
 #print(torch.t(zz))
-"""
-cc=torch.FloatTensor([0.0,0.2,0.4,0.6,0.8,1])
-ccc=torch.FloatTensor([0.0,0.2,0.4,0.6])
+
+cc=torch.FloatTensor([-100,-50,0,50,100,150]).cuda(1)
+ccc=torch.FloatTensor([0,0,0,0]).cuda(1)
 for i in range(4):
   cc=torch.cat([cc,cc])
 cc=cc.view(-1,1)
 ccc=ccc.view(-1,1)
 #print(cc)
 cc=torch.cat([cc,ccc])
-print(cc)
-print(c)
+#print(cc)
+
 
 c.data.copy_(torch.t(cc))
-"""
-
 #print(c)
-"""
-c.data.fill_(0.0)
   
 G_input=torch.cat([c,z],1).view(-1,c_size+z_size,1,1)
   
 G_output = g(G_input)
 #print(G_output)
-fname='/home/eternalding/tommy/project/test_result/'+'test_result_'+version+'_0'+'.png'
+fname='/home/eternalding/tommy/project/test_result/'+'test_result_'+version+'.png'
 save_image(G_output.data,fname, nrow=6)
   
 DQ_output=dq(G_output)
@@ -249,30 +324,8 @@ criterionMSE = nn.MSELoss().cuda(1)
 C_loss =criterionMSE(c,Q_output)
 print(C_loss)
 
-c.data.fill_(1.0)
-z=torch.FloatTensor(batch_size,z_size).cuda(1)
-z=Variable(z)
-zz=torch.randn(z_size,1)
-zz=zz.expand(z_size,100)
-z.data.copy_(torch.t(zz))  
-G_input=torch.cat([c,z],1).view(-1,c_size+z_size,1,1)
-  
-G_output = g(G_input)
-#print(G_output)
-fname='/home/eternalding/tommy/project/test_result/'+'test_result_'+version+'_1'+'.png'
-save_image(G_output.data,fname, nrow=6)
-  
-DQ_output=dq(G_output)
-Q_output=Variable(torch.FloatTensor(batch_size,1),volatile=True)
-Q_output=q(DQ_output)
-  
-D_output=d(DQ_output)
-#print('Q_output:',Q_output)
-criterionMSE = nn.MSELoss().cuda(1)
-C_loss =criterionMSE(c,Q_output)
-print(C_loss)
-"""
 
+'''
 for i in range(10):
   c.data.fill_(i)
   
@@ -292,3 +345,4 @@ for i in range(10):
   criterionMSE = nn.MSELoss().cuda(1)
   C_loss =criterionMSE(c,Q_output)
   print(C_loss)
+'''

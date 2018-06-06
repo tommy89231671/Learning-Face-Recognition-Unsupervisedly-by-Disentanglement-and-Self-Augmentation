@@ -13,8 +13,12 @@ from trainer import Trainer
 from read_dataset import read_dataset
 from read_result import read_result
 
+
+import time
+tStart = time.time()
+
 epoch=20
-pre_epoch=20
+pre_epoch=10
 batch_size=100
 img_size=64
 c_size=1
@@ -28,7 +32,7 @@ RF_loss_weight=2
 generator_loss_weight=2
 kl_loss_weight=5
 reconstruction_loss_weight=10
-contrastive_loss_weight=10
+contrastive_loss_weight=20
 
 
 path='./result_'+version+'/arg_'+version+'.txt'
@@ -61,6 +65,11 @@ for i in [dq, d, q, g,encoder]:
 trainer = Trainer(g,dq, d, q,encoder,batch_size,img_size,c_size,z_size,dataloader,version
                     ,c_loss_weight,RF_loss_weight,generator_loss_weight,reconstruction_loss_weight,kl_loss_weight,epoch,pre_epoch,margin,contrastive_loss_weight)
 trainer.train()
+
+tEnd = time.time()
+
+print('Time:'+str(tEnd - tStart)+' sec\n')
+
 #read_result(version,epoch)
 """
 for j in range(1,9):
@@ -89,4 +98,3 @@ for j in range(1,9):
                     ,c_loss_weight,RF_loss_weight,generator_loss_weight,epoch)
   trainer.train()
 """  
-  
