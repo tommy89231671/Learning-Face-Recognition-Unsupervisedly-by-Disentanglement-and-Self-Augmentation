@@ -15,12 +15,13 @@ import torchvision.datasets as dset
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader,Dataset
 import tsne
+import matplotlib.pyplot as plt
 
 
 class Trainer:
 
   def __init__(self,G,DQ,D,Q,Encoder,batch_size,img_size,c_size,z_size,dataloader,version
-               ,c_loss_weight,RF_loss_weight,generator_loss_weight,reconstruction_loss_weight,kl_loss_weight,epoch,pre_epoch,margin):
+               ,c_loss_weight,RF_loss_weight,generator_loss_weight,reconstruction_loss_weight,kl_loss_weight,epoch,pre_epoch,margin,contrastive_loss_weight):
 
     self.G = G
     self.DQ =DQ
@@ -41,6 +42,127 @@ class Trainer:
     self.kl_loss_weight=kl_loss_weight
     self.pre_epoch=pre_epoch
     self.margin=margin
+    self.contrastive_loss_weight=contrastive_loss_weight
+  def do_siamese(self,epoch,training_iteration,optimEncoder,pre_or_inner_or_result,out_epoch,weight):
+    img0=torch.FloatTensor(self.batch_size, 3, self.img_size, self.img_size).cuda(1)
+    img1=torch.FloatTensor(self.batch_size, 3, self.img_size, self.img_size).cuda(1)
+    img0 = Variable(img0)
+    img1 = Variable(img1)
+    criterionContrastive = siamese.ContrastiveLoss(margin=self.margin,batch_size=self.batch_size)
+    for i in range(epoch):
+        folder_dataset = dset.ImageFolder("/home/eternalding/tommy/training_data/")
+        siamese_dataset = siamese.SiameseNetworkDataset(imageFolderDataset=folder_dataset,
+                                        transform=transforms.Compose([transforms.Resize(self.img_size),transforms.CenterCrop(self.img_size),transforms.ToTensor()]),
+                                        should_invert=False)                             
+                                                                      
+        
+        
+        train_dataloader = DataLoader(siamese_dataset,
+                                      shuffle=False,
+                                      #num_workers=8,
+                                      batch_size=self.batch_size)
+       
+        test_img=torch.FloatTensor(self.batch_size, 3, self.img_size, self.img_size).cuda(1)
+        test_img = Variable(test_img)
+        
+        
+        
+        for num_iters, data in enumerate(train_dataloader,0):
+          img00, img11 , labelx,_= data
+          #img0, img1 , label = img0.cuda(1), img1.cuda(1) , label.cuda(1)
+          if num_iters==training_iteration:
+            break
+          #print(person_class)
+          labelx=Variable(labelx.cuda(1))
+          #label_fix.data.resize_(labelx.size())
+          #label_fix.data.copy_(labelx)
+          img0.data.resize_(img00.size())
+          img0.data.copy_(img00)
+          img1.data.resize_(img11.size())
+          img1.data.copy_(img11)
+          optimEncoder.zero_grad()
+           
+          
+          #output1=self.Encoder(img0,0)
+          #output2=self.Encoder(img1,0)
+          
+          c1_en,z1_en=self.Encoder(img0)
+          c1_mean,c1_logvar=torch.chunk(c1_en,2,dim=1)
+          z1_mean,z1_logvar=torch.chunk(z1_en,2,dim=1)
+          ss=torch.zeros(100)
+        
+          #print(ss.numpy().shape)
+          #print(c1_mean.data.cpu().numpy()[:,0].shape)
+          #plt.plot(c1_mean.data.cpu().numpy()[:,0],ss.numpy())
+          #plt.show()
+          qn = torch.norm(z1_mean, p=2, dim=0).detach()
+          z1_mean = z1_mean.div(qn.expand_as(z1_mean))
+          
+          cz1_mean=torch.cat([c1_mean,z1_mean], 1).view(-1,self.c_size+self.z_size) 
+          qn = torch.norm(cz1_mean, p=2, dim=0).detach()
+          cz1_mean = cz1_mean.div(qn.expand_as(cz1_mean))
+          
+          c2_en,z2_en=self.Encoder(img1)
+          c2_mean,c2_logvar=torch.chunk(c2_en,2,dim=1)
+          z2_mean,z2_logvar=torch.chunk(z2_en,2,dim=1)
+          
+          qn = torch.norm(z2_mean, p=2, dim=0).detach()
+          z2_mean = z2_mean.div(qn.expand_as(z2_mean))
+          #print(c1_mean.data.cpu().numpy()[:,0].shape)
+          cz2_mean=torch.cat([c2_mean,z2_mean], 1).view(-1,self.c_size+self.z_size) 
+          qn = torch.norm(cz2_mean, p=2, dim=0).detach()
+          cz2_mean = cz2_mean.div(qn.expand_as(cz2_mean))
+          loss_contrastive = weight*criterionContrastive(cz1_mean,cz2_mean,labelx)
+          #print(loss_contrastive)
+          loss_contrastive.backward(retain_graph=True)
+          #print(c_mean.data.cpu().numpy())
+          optimEncoder.step()
+        if pre_or_inner_or_result==1:
+            break
+        result='Epoch/Iter:{0}/{1}, Contrastive loss: {2}'.format(
+                i, num_iters, loss_contrastive.data.cpu().numpy())
+        
+        print(result)
+        
+        cz_mean=torch.FloatTensor(self.batch_size,-1).cuda(1)
+        cz_mean=Variable(cz_mean)
+        
+        for ni, data in enumerate(train_dataloader,0):
+            img00, img11 ,_,person_class = data
+            test_img.data.resize_(img00.size())
+            test_img.data.copy_(img00)
+            c_en,z_en=self.Encoder(test_img)
+            c_mean,c_logvar=torch.chunk(c_en,2,dim=1)
+            z_mean,z_logvar=torch.chunk(z_en,2,dim=1)
+              
+            qn = torch.norm(z_mean, p=2, dim=0).detach()
+            z_mean = z_mean.div(qn.expand_as(z_mean))
+              
+            cz_mean=torch.cat([c_mean,z_mean], 1).view(-1,self.c_size+self.z_size) 
+            qn = torch.norm(cz_mean, p=2, dim=0).detach()
+            cz_mean = cz_mean.div(qn.expand_as(cz_mean))
+            break
+        ss=torch.zeros(self.batch_size)
+            
+        tsne.main(cz_mean.data.cpu().numpy(),i,self.version,person_class,30,pre_or_inner_or_result,out_epoch)
+        plt.scatter(c_mean.data.cpu().numpy()[:,0],ss.numpy(),20,person_class)
+        cresult='Epoch{0}, c_mean: {2}, class:{3}'.format(
+                    i, num_iters, c_mean.data.cpu().numpy()[:,0],person_class)
+            
+            #print(cresult)
+        cpath='./result_'+self.version+'/c_vs_class_'+self.version+'.txt'
+            
+        f=open(cpath,'a+')
+        f.write(cresult+'\n')
+        f.close()
+        path=''
+        if pre_or_inner_or_result==0: 
+          path='./result_'+self.version+'/'+'scatter_c_pre_'+str(i)+'.png'
+        elif pre_or_inner_or_result==2:
+          path='./result_'+self.version+'/'+'scatter_c_result_'+str(out_epoch)+'.png'
+        plt.savefig(path)
+        plt.clf()
+    
   def train(self):
     x_real = torch.FloatTensor(self.batch_size, 1, self.img_size, self.img_size).cuda(1)
     img0=torch.FloatTensor(self.batch_size, 3, self.img_size, self.img_size).cuda(1)
@@ -80,99 +202,11 @@ class Trainer:
     optimVAE =optim.Adam([{'params':self.Encoder.parameters()}, {'params':self.G.parameters()}], lr=0.0002, betas=(0.5, 0.99))
     optimEncoder = optim.Adam([{'params':self.Encoder.parameters()}], lr=0.0002, betas=(0.5, 0.99))
     
+
+    self.do_siamese(self.pre_epoch,10,optimEncoder,0,0,self.contrastive_loss_weight)
     
     
-    for i in range(self.pre_epoch):
-        folder_dataset = dset.ImageFolder("/home/eternalding/tommy/training_data/")
-        siamese_dataset = siamese.SiameseNetworkDataset(imageFolderDataset=folder_dataset,
-                                        transform=transforms.Compose([transforms.Resize(self.img_size),transforms.CenterCrop(self.img_size),transforms.ToTensor()]),
-                                        should_invert=False)                             
-                                                                      
-        
-        
-        train_dataloader = DataLoader(siamese_dataset,
-                                      shuffle=False,
-                                      #num_workers=8,
-                                      batch_size=self.batch_size)
-       
-        test_img=torch.FloatTensor(self.batch_size, 3, self.img_size, self.img_size).cuda(1)
-        test_img = Variable(test_img)
-        
-       
-        
-        for num_iters, data in enumerate(train_dataloader,0):
-          img00, img11 , labelx,_= data
-          #img0, img1 , label = img0.cuda(1), img1.cuda(1) , label.cuda(1)
-          if labelx.size(0)!=self.batch_size:
-            break
-          #print(person_class)
-          labelx=Variable(labelx.cuda(1))
-          #label_fix.data.resize_(labelx.size())
-          #label_fix.data.copy_(labelx)
-          img0.data.resize_(img00.size())
-          img0.data.copy_(img00)
-          img1.data.resize_(img11.size())
-          img1.data.copy_(img11)
-          optimEncoder.zero_grad()
-           
-          
-          #output1=self.Encoder(img0,0)
-          #output2=self.Encoder(img1,0)
-          
-          c1_en,z1_en=self.Encoder(img0)
-          c1_mean,c1_logvar=torch.chunk(c1_en,2,dim=1)
-          z1_mean,z1_logvar=torch.chunk(z1_en,2,dim=1)
-          
-          qn = torch.norm(z1_mean, p=2, dim=0).detach()
-          z1_mean = z1_mean.div(qn.expand_as(z1_mean))
-          
-          cz1_mean=torch.cat([c1_mean,z1_mean], 1).view(-1,self.c_size+self.z_size) 
-          qn = torch.norm(cz1_mean, p=2, dim=0).detach()
-          cz1_mean = cz1_mean.div(qn.expand_as(cz1_mean))
-          
-          c2_en,z2_en=self.Encoder(img1)
-          c2_mean,c2_logvar=torch.chunk(c2_en,2,dim=1)
-          z2_mean,z2_logvar=torch.chunk(z2_en,2,dim=1)
-          
-          qn = torch.norm(z2_mean, p=2, dim=0).detach()
-          z2_mean = z2_mean.div(qn.expand_as(z2_mean))
-          
-          cz2_mean=torch.cat([c2_mean,z2_mean], 1).view(-1,self.c_size+self.z_size) 
-          qn = torch.norm(cz2_mean, p=2, dim=0).detach()
-          cz2_mean = cz2_mean.div(qn.expand_as(cz2_mean))
-          loss_contrastive = criterionContrastive(cz1_mean,cz2_mean,labelx)
-          #print(loss_contrastive)
-          loss_contrastive.backward(retain_graph=True)
-          
-          optimEncoder.step()
-        result='Epoch/Iter:{0}/{1}, Contrastive loss: {2}'.format(
-                i, num_iters, loss_contrastive.data.cpu().numpy())
-        
-        print(result)
-        cz_mean=torch.FloatTensor(self.batch_size,-1).cuda(1)
-        cz_mean=Variable(cz_mean)
-        for num_iters, data in enumerate(train_dataloader,0):
-          img00, img11 ,_,person_class = data
-          test_img.data.resize_(img00.size())
-          test_img.data.copy_(img00)
-          c_en,z_en=self.Encoder(test_img)
-          c_mean,c_logvar=torch.chunk(c_en,2,dim=1)
-          z_mean,z_logvar=torch.chunk(z_en,2,dim=1)
-          
-          qn = torch.norm(z_mean, p=2, dim=0).detach()
-          z_mean = z_mean.div(qn.expand_as(z_mean))
-          
-          cz_mean=torch.cat([c_mean,z_mean], 1).view(-1,self.c_size+self.z_size) 
-          qn = torch.norm(cz_mean, p=2, dim=0).detach()
-          cz_mean = cz_mean.div(qn.expand_as(cz_mean))
-          break
-        tsne.main(cz_mean.data.cpu().numpy(),i,self.version,person_class,30)
-        #tsne.main(cz_mean.data.cpu().numpy(),i,self.version,person_class,20)
-        #tsne.main(cz_mean.data.cpu().numpy(),i,self.version,person_class,30)
-    
-    
-    
-    
+    num_iters=0
     for epoch in range(self.epoch):
         
         for num_iters, batch_data in enumerate(self.dataloader, 0):
@@ -255,7 +289,7 @@ class Trainer:
             optimVAE.step()
             
             
-              
+            """randn"""  
             optimD.zero_grad()
             z.data=torch.randn(z.size()).cuda(1)#changing noise to train
             c.data=torch.randn(c.size()).cuda(1)
@@ -277,9 +311,12 @@ class Trainer:
             generator_loss = self.generator_loss_weight*criterionBCE(x_fake_result, label)
             generator_loss.backward(retain_graph=True)
             optimG.step()           
-            
-            
-            
+            if num_iters%5==0:
+              self.do_siamese(1,10,optimEncoder,1,epoch,self.contrastive_loss_weight)  
+            """contrastive"""
+            #self.do_siamese(1,10,optimEncoder,1)
+        self.do_siamese(5,10,optimEncoder,2,epoch,self.contrastive_loss_weight)
+          
         result='Epoch/Iter:{0}/{1}, Real loss: {2},fake loss: {3},c loss: {4}, generator_loss: {5},reconstruction_loss: {6},KL_loss: {7}:'.format(
                 epoch, num_iters, loss_real.data.cpu().numpy(),loss_fake.data.cpu().numpy(),C_loss.data.cpu().numpy(),
                 generator_loss.data.cpu().numpy(),vae_reconstruct_loss.data.cpu().numpy(),KL.data.cpu().numpy())
@@ -299,31 +336,6 @@ class Trainer:
         f=open(path,'a+')
         f.write(result+'\n')
         f.close()
-        
-        '''
-        if epoch%2==0:
-              c_en,z_en=self.Encoder(x_real)
-              c_mean,c_logvar=torch.chunk(c_en,2,dim=1)
-              z_mean,z_logvar=torch.chunk(z_en,2,dim=1)
-              c_distribution =torch.distributions.Normal(c_mean, torch.exp(c_logvar))
-              z_distribution= torch.distributions.Normal(z_mean, torch.exp(z_logvar))  
-              c=c_distribution.sample()
-              z=z_distribution.sample()
-            
-            
-        else:
-              z.data=torch.randn(z.size()).cuda(1)#changing noise to train
-              c.data=torch.randn(c.size()).cuda(1)
-        
-        c_en,z_en=self.Encoder(x_real)
-        c_mean,c_logvar=torch.chunk(c_en,2,dim=1)
-        z_mean,z_logvar=torch.chunk(z_en,2,dim=1)
-            
-        c_distribution =torch.distributions.Normal(c_mean, torch.exp(c_logvar))
-        z_distribution= torch.distributions.Normal(z_mean, torch.exp(z_logvar))
-        c=c_distribution.sample()
-        z=z_distribution.sample()
-        '''
         c_en,z_en=self.Encoder(x_real)
         c_mean,c_logvar=torch.chunk(c_en,2,dim=1)
         z_mean,z_logvar=torch.chunk(z_en,2,dim=1)
@@ -351,6 +363,10 @@ class Trainer:
         f1name='./result_'+self.version+'/'+str(epoch)+'_rand.png'
           
         save_image(x_save.data,f1name, nrow=int(self.batch_size/5))
+    
+    
+
+    
     
     gpath='./model/Generator_'+self.version+'.pkl'
     dpath='./model/Discriminator_'+self.version+'.pkl'
