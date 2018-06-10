@@ -12,18 +12,28 @@ from encoder import Encoder
 from trainer import Trainer
 from read_dataset import read_dataset
 from read_result import read_result
+from classifier import Classifier
+
+import time
+tStart = time.time()
 
 epoch=20
+pre_epoch=10
 batch_size=100
 img_size=64
 c_size=1
-z_size=99
-dataloader=read_dataset('../pic',img_size,batch_size)
+z_size=19
+margin=0.5
+dataloader=read_dataset("/home/eternalding/tommy/pic/",img_size,batch_size)
 version=input('result version:')
 
-c_loss_weight=0.3
-RF_loss_weight=0.7
-generator_loss_weight=0.7
+c_loss_weight=1
+RF_loss_weight=2
+generator_loss_weight=2
+kl_loss_weight=5
+reconstruction_loss_weight=10
+contrastive_loss_weight=20
+
 
 path='./result_'+version+'/arg_'+version+'.txt'
 f=open(path,'a+')
@@ -35,37 +45,32 @@ f.close()
 unloader = transforms.ToPILImage()
 encoder=Encoder(c_size,z_size)
 
-def weights_init(m):
-    classname = m.__class__.__name__
-    if classname.find('Conv') != -1:
-        m.weight.data.normal_(0.0, 0.02)
-    elif classname.find('BatchNorm') != -1:
-        m.weight.data.normal_(1.0, 0.02)
-        m.bias.data.fill_(0)
-
-
-
-
-
 g=Generator(c_size+z_size)
-g.apply(weights_init)
+#g.apply(weights_init)
 
 d=Discriminator()
-d.apply(weights_init)
+#d.apply(weights_init)
 
 q=Q(c_size)
-q.apply(weights_init)
+#q.apply(weights_init)
 
 dq=D_Q_commonlayer()
-dq.apply(weights_init)  
-for i in [dq, d, q, g,encoder]:
-  i.cuda()
+#dq.apply(weights_init)  
+classifier=Classifier(z_size)
+
+for i in [dq, d, q, g,encoder,classifier]:
+  i.cuda(1)
     #i.apply(weights_init)
   
-trainer = Trainer(g,dq, d, q,encoder,batch_size,img_size,c_size,z_size,dataloader,version
-                    ,c_loss_weight,RF_loss_weight,generator_loss_weight,epoch)
+trainer = Trainer(g,dq, d, q,encoder,classifier,batch_size,img_size,c_size,z_size,dataloader,version
+                    ,c_loss_weight,RF_loss_weight,generator_loss_weight,reconstruction_loss_weight,kl_loss_weight,epoch,pre_epoch,margin,contrastive_loss_weight)
 trainer.train()
-read_result(version,epoch)
+
+tEnd = time.time()
+
+print('Time:'+str(tEnd - tStart)+' sec\n')
+
+#read_result(version,epoch)
 """
 for j in range(1,9):
   v=version+str(j+1)
@@ -93,4 +98,3 @@ for j in range(1,9):
                     ,c_loss_weight,RF_loss_weight,generator_loss_weight,epoch)
   trainer.train()
 """  
-  
