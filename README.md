@@ -25,7 +25,7 @@ Input2 on Metric Learning and Classifier.
 
 Model Graph:
 
-![image]( https://github.com/tommy89231671/Project/blob/master/Model%20graph.jpg)
+![image]( https://github.com/tommy89231671/Project/blob/Add-classifier/Model%20for%20project.jpg)
 
  
  
