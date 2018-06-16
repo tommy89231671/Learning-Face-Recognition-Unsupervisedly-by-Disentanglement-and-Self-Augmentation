@@ -4,7 +4,7 @@ https://drive.google.com/file/d/1TDphufJnVbx5jBBPI1qWPzqePlpcnjoh/view?usp=shari
 
 Purpose:
   
-  We would like to classsify few people in fix group like family precisely.And do well on different situation.For example,wheather a man wears glassese or not,we can say that he is the same person.
+  We would like to classsify few people in fix group like family precisely.And do well on different situation.For example,whether a man wears glassese or not,we can say that he is the same person.
 
 Input:
 
