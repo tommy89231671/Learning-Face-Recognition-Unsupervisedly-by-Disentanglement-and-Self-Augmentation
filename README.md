@@ -4,7 +4,8 @@ https://drive.google.com/file/d/1TDphufJnVbx5jBBPI1qWPzqePlpcnjoh/view?usp=shari
 
 Purpose:
   
-  We would like to classsify few people in fix group like family precisely.And do well on different situation.For example,whether a man wears glassese or not,we can say that he is the same person.
+  We would like to classsify few people in fix group like family precisely.And do well on different situation.For example,whether a man wears glassese or not,we can say that he is the same person. Another example is no matter the camera's vision angle is, the model should not be influenced.
+  
 
 Input:
 
@@ -12,7 +13,7 @@ Input:
 
 2.Positive and Negative pairs
 
- (1)Take two images into a pre-trained face feature extraction model and use knn to find positive pairs.
+ (1)Take two images into a pre-trained face feature extraction model(Ex:lightCNN) and use knn to find positive pairs.
  
  (2)Use frame's property which is that the people in the same frame will be the different person and it is the negative pairs.
 
