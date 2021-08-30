@@ -2,7 +2,7 @@
 Dataset:
 https://drive.google.com/file/d/1TDphufJnVbx5jBBPI1qWPzqePlpcnjoh/view?usp=sharing
 Publication:
-[Learning Face Recognition Unsupervisedly by Disentanglement and Self Augmentation
+![Learning Face Recognition Unsupervisedly by Disentanglement and Self Augmentation
 ]https://github.com/tommy89231671/Learning-Face-Recognition-Unsupervisedly-by-Disentanglement-and-Self-Augmentation/blob/master/Learning%20Face%20Recognition%20Unsupervisedly%20by%20Disentanglement%20and%20Self-Augmentation-1.jpg
 Purpose:
   
