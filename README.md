@@ -11,7 +11,7 @@ Poster (Mandarin):
 
 Purpose:
   
-  We would like to classsify few people in fix group like family precisely.And do well on different situation.For example,whether a man wears glassese or not,we can say that he is the same person. Another example is no matter the camera's vision angle is, the model should not be influenced.
+  We would like to classsify few people in fix group like family precisely. And do well on different situation. For example,whether a man wears glassese or not,we can say that he is the same person. Another example is no matter the camera's vision angle is, the model should not be influenced.
   
 
 Input:
